@@ -8,8 +8,9 @@ A Discord ratelimiter intended to be used with net/http clients.
 package main
 
 import (
+	"flag"
+	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/Postcord/ratelimiter"
@@ -17,22 +18,32 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const GetMemberFmt = "https://discord.com/api/guilds/%s/members/%s"
+
 func main() {
+	guild := flag.String("guild", "", "Guild ID")
+	member := flag.String("member", "", "Member ID")
+	token := flag.String("token", "", "Discord API Token")
+	flag.Parse()
+
+	if *guild == "" || *member == "" || *token == "" {
+		log.Fatal().Msg("Please provide a guild ID, member ID, and token")
+	}
+
 	client := http.Client{}
 	rl := ratelimiter.NewRatelimiter()
 
-	req, err := http.NewRequest("GET", "https://discord.com/api/guilds/775135665602953286/members/109710323094683648", nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf(GetMemberFmt, *guild, *member), nil)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create request")
 	}
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
-	req.Header.Add("Authorization", "Bot "+os.Getenv("TOKEN"))
-	req.Header.Add("User-Agent", "RatelimitTestClient/1.0 (https://github.com/Postcord/ratelimiter)")
+	req.Header.Add("Authorization", "Bot "+*token)
+	req.Header.Add("User-Agent", "KelwingTestClient/1.0 (Linux)")
 
 	for i := 0; i < 10; i++ {
-        // Request a reservation, and wait if required
 		err := rl.Limit(req)
 		if err != nil {
 			continue
@@ -44,9 +55,9 @@ func main() {
 		}
 		length := time.Since(start)
 		log.Info().Int("status", resp.StatusCode).Dur("duration", length).Msg("Request successful")
-        // Update the ratelimiter with the response from Discord
 		rl.Update(resp)
 		resp.Body.Close()
 	}
 }
+
 ```
