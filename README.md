@@ -1,6 +1,6 @@
 # Ratelimiter
 
-A Discord ratelimiter intended to be used with net/http clients.
+A Discord ratelimiter intended to be used with net/http clients using time/x/rate.
 
 ## Example
 
